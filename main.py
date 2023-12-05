@@ -42,6 +42,8 @@ class LoginData(BaseModel):
     password: str
 
 class Note(BaseModel):
+    note_title: str
+    note_due: str
     note_description: str
     note_owner: int
 
@@ -51,6 +53,10 @@ class Task(BaseModel):
     task_description: str
     due_date: str
     task_owner: int
+
+
+class TaskID(BaseModel):
+    task_id: int
 
 
 
@@ -106,6 +112,7 @@ async def get_user_data(user_id: UserID, db: Session = Depends(get_db)):
 async def get_notes(id: str, db: Session = Depends(get_db)):
     try:
         all_notes = db.query(models.Note).filter(models.Note.note_owner == id).all()
+        print(all_notes)
 
         return {'response': 'retrieval complete.', 'notes': all_notes}
     except:
@@ -115,18 +122,22 @@ async def get_notes(id: str, db: Session = Depends(get_db)):
 
 @app.post('/create_note')
 async def create_note(note: Note, db: Session = Depends(get_db)):
-    try:
-        new_note = models.Note()
+    new_note = models.Note()
 
-        new_note.note_description = note.note_description
-        new_note.note_owner = int(note.note_owner)
+    to_datetime = note.note_due[:25]
+    date_format = "%m-%d-%Y %H:%M"
 
-        db.add(new_note)
-        db.commit()
+    new_note.note_title = note.note_title
+    new_note.due_date = datetime.strptime(to_datetime, date_format)
+    new_note.note_description = note.note_description
+    new_note.note_owner = int(note.note_owner)
 
-        return {'response': 'note created.'}
-    except:
-        return {'response': 'failed to create note.'}
+    db.add(new_note)
+    db.commit()
+
+    return {'response': 'note created.'}
+    # except:
+    #     return {'response': 'failed to create note.'}
     
 
 @app.post('/delete_note')
@@ -158,9 +169,6 @@ async def get_tasks(id: str, db: Session = Depends(get_db)):
                 all_activities.append(task)
             else:
                 all_exams.append(task)
-
-        print(f'Printing activities: {all_activities}')
-        print(f'Printing exams: {all_exams}')
 
         return {'response': 'tasks retrieved', 'activities': all_activities, 'exams': all_exams}
     except:
@@ -226,3 +234,17 @@ async def create_task(task: Task, db: Session = Depends(get_db)):
     db.commit()
 
     return {'response': 'task created'}
+
+
+@app.post('/mark_complete')
+async def mark_task_complete(task: TaskID, db: Session = Depends(get_db)):
+    try:
+        retrieved_task = db.query(models.Task).filter(models.Task.id == task.task_id).first()
+        
+        if retrieved_task:
+            retrieved_task.is_completed = True
+            db.commit()
+
+        return {'response': 'task completed.'}
+    except:
+        return {'response': 'failed to mark task as completed.'}
