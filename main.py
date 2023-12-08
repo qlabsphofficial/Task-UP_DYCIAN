@@ -59,6 +59,11 @@ class TaskID(BaseModel):
     task_id: int
 
 
+class CompletionRequest(BaseModel):
+    id: int
+    task_id: int
+
+
 
 def get_db():
     try:
@@ -183,16 +188,25 @@ async def get_task_overview(id: str, db: Session = Depends(get_db)):
         all_activities = []
         all_exams = []
         weekly_tasks = []
+        pie_data = []
         completed_tasks = 0
         pending_tasks = 0
+        pending_acts = 0
+        pending_exams = 0
 
         for task in all_tasks:
             task.due_date = task.due_date.strftime("%Y-%m-%d %H:%M")
 
             if task.task_type == 'Activities':
                 all_activities.append(task)
+
+                if not task.is_completed:
+                    pending_acts += 1
             else:
                 all_exams.append(task)
+
+                if not task.is_completed:
+                    pending_exams += 1
 
             # Handling Pending and Completed Tasks
             if task.is_completed:
@@ -200,13 +214,19 @@ async def get_task_overview(id: str, db: Session = Depends(get_db)):
             else:
                 pending_tasks += 1
 
+        pie_data.append(pending_acts)
+        pie_data.append(pending_exams)
+
         return {
             'response': 'tasks retrieved', 
             'activities': all_activities,
             'exams': all_exams,
             'weekly_tasks': weekly_tasks,
             'completed': completed_tasks,
-            'pending': pending_tasks
+            'pending': pending_tasks,
+            'pending_activities': pending_acts,
+            'pending_exams': pending_exams,
+            'pie_data': pie_data
         }
     # except:
     #     return {'response': 'failed to retrieve tasks.'}
@@ -237,7 +257,7 @@ async def create_task(task: Task, db: Session = Depends(get_db)):
 
 
 @app.post('/mark_complete')
-async def mark_task_complete(task: TaskID, db: Session = Depends(get_db)):
+async def mark_task_complete(task: CompletionRequest, db: Session = Depends(get_db)):
     try:
         retrieved_task = db.query(models.Task).filter(models.Task.id == task.task_id).first()
         
@@ -245,6 +265,20 @@ async def mark_task_complete(task: TaskID, db: Session = Depends(get_db)):
             retrieved_task.is_completed = True
             db.commit()
 
-        return {'response': 'task completed.'}
+        # Retrieve All Data
+        all_tasks = db.query(models.Task).filter(models.Task.task_owner == task.id)
+
+        all_activities = []
+        all_exams = []
+
+        for task in all_tasks:
+            task.due_date = task.due_date.strftime("%Y-%m-%d %H:%M")
+
+            if task.task_type == 'Activities':
+                all_activities.append(task)
+            else:
+                all_exams.append(task)
+
+        return {'response': 'task completed.', 'activities': all_activities, 'exams': all_exams}
     except:
         return {'response': 'failed to mark task as completed.'}
