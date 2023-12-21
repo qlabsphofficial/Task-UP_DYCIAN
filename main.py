@@ -282,15 +282,19 @@ async def mark_task_complete(task: CompletionRequest, db: Session = Depends(get_
 
         all_activities = []
         all_exams = []
+        completed = []
 
         for task in all_tasks:
             task.due_date = task.due_date.strftime("%Y-%m-%d %H:%M")
 
-            if task.task_type == 'Activities':
-                all_activities.append(task)
+            if task.is_completed:
+                completed.append(task)
             else:
-                all_exams.append(task)
+                if task.task_type == 'Activities':
+                    all_activities.append(task)
+                else:
+                    all_exams.append(task)
 
-        return {'response': 'task completed.', 'activities': all_activities, 'exams': all_exams}
+        return {'response': 'task completed.', 'activities': all_activities, 'exams': all_exams, 'completed': completed}
     except:
         return {'response': 'failed to mark task as completed.'}
