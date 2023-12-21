@@ -77,18 +77,21 @@ async def register(user: User, db: Session = Depends(get_db)):
     new_user = models.User()
 
     try:
-        new_user.student_id = user.student_id
-        new_user.password = user.password
-        new_user.first_name = user.first_name
-        new_user.last_name = user.last_name
-        new_user.middle_initial = user.middle_initial
-        new_user.status = user.status
-        new_user.department = user.department
-        new_user.course = user.course
+        existing_student = db.query(models.User).filter(models.User.student_id == user.student_id).first()
 
-        db.add(new_user)
-        db.commit()
+        if existing_student is None:
+            new_user.student_id = user.student_id
+            new_user.password = user.password
+            new_user.first_name = user.first_name
+            new_user.last_name = user.last_name
+            new_user.middle_initial = user.middle_initial
+            new_user.status = user.status
+            new_user.department = user.department
+            new_user.course = user.course
 
+            db.add(new_user)
+            db.commit()
+        
     finally:
         db.close()
 
@@ -129,11 +132,7 @@ async def get_notes(id: str, db: Session = Depends(get_db)):
 async def create_note(note: Note, db: Session = Depends(get_db)):
     new_note = models.Note()
 
-    to_datetime = note.note_due[:25]
-    date_format = "%m-%d-%Y %H:%M"
-
     new_note.note_title = note.note_title
-    new_note.due_date = datetime.strptime(to_datetime, date_format)
     new_note.note_description = note.note_description
     new_note.note_owner = int(note.note_owner)
 
@@ -143,7 +142,16 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
     return {'response': 'note created.'}
     # except:
     #     return {'response': 'failed to create note.'}
-    
+
+
+@app.post('/update_note')
+async def update_note(note: Note, db: Session = Depends(get_db)):
+    try:
+        pass
+    except:
+        pass
+
+
 
 @app.post('/delete_note')
 async def delete_note(note_id: NoteID, db: Session = Depends(get_db)):
@@ -166,16 +174,20 @@ async def get_tasks(id: str, db: Session = Depends(get_db)):
 
         all_activities = []
         all_exams = []
+        completed = []
 
         for task in all_tasks:
             task.due_date = task.due_date.strftime("%Y-%m-%d %H:%M")
 
-            if task.task_type == 'Activities':
-                all_activities.append(task)
+            if task.is_completed:
+                completed.append(task)
             else:
-                all_exams.append(task)
+                if task.task_type == 'Activities':
+                    all_activities.append(task)
+                else:
+                    all_exams.append(task)
 
-        return {'response': 'tasks retrieved', 'activities': all_activities, 'exams': all_exams}
+        return {'response': 'tasks retrieved', 'activities': all_activities, 'exams': all_exams, 'completed': completed}
     except:
         return {'response': 'failed to retrieve tasks.'}
     
