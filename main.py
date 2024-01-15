@@ -116,6 +116,27 @@ async def all_users(db: Session = Depends(get_db)):
     return { 'response': 'successfully retrieved users', 'users': all_users }
 
 
+@app.get('/all_notes')
+async def all_notes(db: Session = Depends(get_db)):
+    all_notes = db.query(models.Note).all()
+
+    return { 'response': 'successfully retrieved notes', 'notes': all_notes }
+
+
+@app.get('/all_tasks')
+async def all_tasks(db: Session = Depends(get_db)):
+    all_tasks = db.query(models.Task).all()
+
+    return { 'response': 'successfully retrieved tasks', 'tasks': all_tasks }
+
+
+@app.get('/all_users')
+async def all_users(db: Session = Depends(get_db)):
+    all_users = db.query(models.User).all()
+
+    return { 'response': 'successfully retrieved users', 'users': all_users }
+
+
 @app.post('/get_user_data')
 async def get_user_data(user_id: UserID, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id.id).first()
