@@ -109,6 +109,13 @@ async def login(student: LoginData, db: Session = Depends(get_db)):
         return {'response': 'login failed'}
 
 
+@app.get('/all_users')
+async def all_users(db: Session = Depends(get_db)):
+    all_users = db.query(models.User).all()
+
+    return { 'response': 'successfully retrieved users', 'users': all_users }
+
+
 @app.post('/get_user_data')
 async def get_user_data(user_id: UserID, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id.id).first()
@@ -145,11 +152,19 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
 
 
 @app.post('/update_note')
-async def update_note(note: Note, db: Session = Depends(get_db)):
+async def update_note(note_id: str, note_title: str, note_description: str, db: Session = Depends(get_db)):
     try:
-        pass
+        retrieved_note = db.query(models.Note).filter(models.Note.id == note_id.id).first()
+
+        if retrieved_note:
+            retrieved_note.update({
+                'note_title': note_title,
+                'note_description': note_description
+            })
+            db.commit()
+        return {'response': 'note updated.'}
     except:
-        pass
+        return {'response': 'failed to update note.'}
 
 
 
