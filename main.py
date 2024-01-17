@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException, status, Depends
+import os
+import shutil
+from fastapi import FastAPI, File, HTTPException, UploadFile, status, Depends
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal
@@ -141,7 +144,7 @@ async def all_users(db: Session = Depends(get_db)):
 async def get_user_data(user_id: UserID, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id.id).first()
 
-    return {'user_data': user, 'response': 'retrieval success'}
+    return { 'user_data': user, 'response': 'retrieval success' }
 
 
 @app.get('/get_notes')
@@ -150,10 +153,10 @@ async def get_notes(id: str, db: Session = Depends(get_db)):
         all_notes = db.query(models.Note).filter(models.Note.note_owner == id).all()
         print(all_notes)
 
-        return {'response': 'retrieval complete.', 'notes': all_notes}
+        return { 'response': 'retrieval complete.', 'notes': all_notes }
     except:
         print('Retrieval failed.')
-        return {'response': 'retrieval failed.', 'notes': all_notes}
+        return { 'response': 'retrieval failed.', 'notes': all_notes }
 
 
 @app.post('/create_note')
@@ -167,9 +170,23 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
     db.add(new_note)
     db.commit()
 
-    return {'response': 'note created.'}
+    return { 'response': 'note created.' }
     # except:
     #     return {'response': 'failed to create note.'}
+
+
+@app.post("/upload-file/")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        # Save the file to a specific directory
+        file_path = os.path.join("uploads", file.filename)
+        with open(file_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+        return JSONResponse(content={"message": "File uploaded successfully", "file_path": file_path}, status_code=200)
+
+    except Exception as e:
+        return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
 
 
 @app.post('/update_note')
@@ -183,9 +200,9 @@ async def update_note(note_id: str, note_title: str, note_description: str, db: 
                 'note_description': note_description
             })
             db.commit()
-        return {'response': 'note updated.'}
+        return { 'response': 'note updated.' }
     except:
-        return {'response': 'failed to update note.'}
+        return { 'response': 'failed to update note.' }
 
 
 
@@ -198,9 +215,9 @@ async def delete_note(note_id: NoteID, db: Session = Depends(get_db)):
             db.delete(retrieved_note)
             db.commit()
 
-        return {'response': 'note deleted.'}
+        return { 'response': 'note deleted.' }
     except:
-        return {'response': 'failed to delete note.'}
+        return { 'response': 'failed to delete note.' }
     
 
 @app.get('/get_tasks')
@@ -223,9 +240,9 @@ async def get_tasks(id: str, db: Session = Depends(get_db)):
                 else:
                     all_exams.append(task)
 
-        return {'response': 'tasks retrieved', 'activities': all_activities, 'exams': all_exams, 'completed': completed}
+        return { 'response': 'tasks retrieved', 'activities': all_activities, 'exams': all_exams, 'completed': completed }
     except:
-        return {'response': 'failed to retrieve tasks.'}
+        return { 'response': 'failed to retrieve tasks.' }
     
 
 @app.get('/get_task_overview')
@@ -301,7 +318,7 @@ async def create_task(task: Task, db: Session = Depends(get_db)):
     db.add(new_task)
     db.commit()
 
-    return {'response': 'task created'}
+    return { 'response': 'task created' }
 
 
 @app.post('/mark_complete')
@@ -331,6 +348,6 @@ async def mark_task_complete(task: CompletionRequest, db: Session = Depends(get_
                 else:
                     all_exams.append(task)
 
-        return {'response': 'task completed.', 'activities': all_activities, 'exams': all_exams, 'completed': completed}
+        return { 'response': 'task completed.', 'activities': all_activities, 'exams': all_exams, 'completed': completed }
     except:
-        return {'response': 'failed to mark task as completed.'}
+        return { 'response': 'failed to mark task as completed.' }
