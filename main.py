@@ -178,8 +178,12 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
 @app.post("/upload-file/")
 async def upload_file(file: UploadFile = File(...)):
     try:
-        # Save the file to a specific directory
-        file_path = os.path.join("uploads", file.filename)
+        # Navigate to the parent directory and create 'uploads' folder if it doesn't exist
+        upload_folder = os.path.join(os.path.dirname(__file__), "uploads")
+        os.makedirs(upload_folder, exist_ok=True)
+
+        # Save the file to the 'uploads' folder
+        file_path = os.path.join(upload_folder, file.filename)
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
@@ -187,7 +191,6 @@ async def upload_file(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
-
 
 @app.post('/update_note')
 async def update_note(note_id: str, note_title: str, note_description: str, db: Session = Depends(get_db)):
