@@ -177,8 +177,10 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
 
 @app.post("/upload-file/")
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    try:
+
+        print('Attempting to display file...')
         print(file)
+        print('File displayed!')
 
         # Navigate to the parent directory and create 'uploads' folder if it doesn't exist
         upload_folder = os.path.join(os.path.dirname(__file__), "uploads")
@@ -191,8 +193,8 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
 
         return JSONResponse(content={"message": "File uploaded successfully", "file_path": file_path}, status_code=200)
 
-    except Exception as e:
-        return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
+    # except Exception as e:
+    #     return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
 
 
 @app.get('/get_attachments')
