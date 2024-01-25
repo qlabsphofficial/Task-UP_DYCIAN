@@ -170,31 +170,38 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
     db.add(new_note)
     db.commit()
 
+    print(new_note.id)
+
     return { 'response': 'note created.' }
     # except:
     #     return {'response': 'failed to create note.'}
 
 
-@app.post("/upload-file/")
+@app.post("/upload_file")
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
-
+    try:
         print('Attempting to display file...')
-        print(file)
+        print(file.filename)
         print('File displayed!')
 
         # Navigate to the parent directory and create 'uploads' folder if it doesn't exist
         upload_folder = os.path.join(os.path.dirname(__file__), "uploads")
         os.makedirs(upload_folder, exist_ok=True)
 
+        # Generate a unique file name by appending a timestamp
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        base_name, file_extension = os.path.splitext(file.filename)
+        unique_file_name = f"{base_name}_{timestamp}{file_extension}"
+
         # Save the file to the 'uploads' folder
-        file_path = os.path.join(upload_folder, file.filename)
+        file_path = os.path.join(upload_folder, unique_file_name)
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
         return JSONResponse(content={"message": "File uploaded successfully", "file_path": file_path}, status_code=200)
 
-    # except Exception as e:
-    #     return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
+    except Exception as e:
+        return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
 
 
 @app.get('/get_attachments')
