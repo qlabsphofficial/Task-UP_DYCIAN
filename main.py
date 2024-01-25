@@ -176,8 +176,18 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
 
 
 @app.post("/upload-file/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(note_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
+        print(note_id)
+        print(file)
+        print('Uploading file...')
+        new_attachment = models.Attachment()
+        new_attachment.content_type = ''
+        new_attachment.bind_note = note_id
+
+        db.add(new_attachment)
+        db.commit()
+
         # Navigate to the parent directory and create 'uploads' folder if it doesn't exist
         upload_folder = os.path.join(os.path.dirname(__file__), "uploads")
         os.makedirs(upload_folder, exist_ok=True)
@@ -191,6 +201,19 @@ async def upload_file(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"message": "Error uploading file", "error": str(e)}, status_code=500)
+
+
+@app.get('/get_attachments')
+async def get_attachments(db: Session = Depends(get_db)):
+    try:
+        all_attachments = db.query(models.Attachment).all()
+        print(all_attachments)
+
+        return { 'response': 'retrieval complete.', 'attachments': all_attachments }
+    except:
+        print('Retrieval failed.')
+        return { 'response': 'retrieval failed.', 'attachments': all_attachments }
+
 
 @app.post('/update_note')
 async def update_note(note_id: str, note_title: str, note_description: str, db: Session = Depends(get_db)):

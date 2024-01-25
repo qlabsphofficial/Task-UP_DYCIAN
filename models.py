@@ -1,6 +1,6 @@
 from database import Base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Integer, Boolean, String, Column, ForeignKey, DateTime
+from sqlalchemy import Integer, Boolean, String, Column, ForeignKey, DateTime, LargeBinary
 
 
 class User(Base):
@@ -27,10 +27,20 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     note_title = Column(String)
     note_description = Column(String)
-    due_date = Column(DateTime)
     note_owner = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="notes")
+    attachments = relationship("Attachment", back_populates="note_bound")
+
+
+class Attachment(Base):
+    __attachments__ = 'attachments'
+
+    id = Column(Integer, primary_key=True, index=True)
+    content_type = Column(String)
+    bind_note = Column(Integer, ForeignKey('notes.id'))
+
+    note_bound = relationship('Note', back_populates="attachments")
 
 
 class Task(Base):
