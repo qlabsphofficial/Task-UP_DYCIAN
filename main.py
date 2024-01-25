@@ -176,17 +176,9 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
 
 
 @app.post("/upload-file/")
-async def upload_file(note_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
-        print(note_id)
         print(file)
-        print('Uploading file...')
-        new_attachment = models.Attachment()
-        new_attachment.content_type = ''
-        new_attachment.bind_note = note_id
-
-        db.add(new_attachment)
-        db.commit()
 
         # Navigate to the parent directory and create 'uploads' folder if it doesn't exist
         upload_folder = os.path.join(os.path.dirname(__file__), "uploads")
