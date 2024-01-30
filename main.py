@@ -175,7 +175,7 @@ async def create_note(note: Note, db: Session = Depends(get_db)):
     #     return {'response': 'failed to create note.'}
 
 
-@app.post("/upload_file")
+@app.post("/upload_file/{note_id}")
 async def upload_file(note_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         print(file.filename)
